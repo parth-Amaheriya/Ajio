@@ -8,7 +8,7 @@ DB_CONFIG = {
 }
 
 DATABASE = "AJIO"
-LINK_LIMIT = 10
+LINK_LIMIT = 2
 PRODUCT_LINK_LIMIT = 50
 BATCH_SIZE = 1000 
 
@@ -69,7 +69,6 @@ def create_tables():
 
 def insert_category_link(json_data: dict) -> int:
     count = 0
-    print(json_data)
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             for key, category in json_data.items():
@@ -87,12 +86,22 @@ def insert_category_link(json_data: dict) -> int:
             return count
         
 def get_pending_category_links():
-    con= get_db_connection()
-    cursor=con.cursor(dictionary=True)
-    cursor.execute("SELECT sub_id, product_api_url FROM category_Links WHERE status='pending' LIMIT %s", (LINK_LIMIT,))
-    rows=cursor.fetchall()
-    cursor.execute("UPDATE category_Links SET status='processing' WHERE sub_id IN (%s)" % ",".join(str(row['sub_id']) for row in rows))
-    con.commit()
+    con = get_db_connection()
+    cursor = con.cursor(dictionary=True)
+
+    cursor.execute(
+        "SELECT sub_id, product_api_url FROM category_Links WHERE status='pending' LIMIT %s",
+        (LINK_LIMIT,)
+    )
+    rows = cursor.fetchall()
+
+    if rows: 
+        ids = ",".join(str(row['sub_id']) for row in rows)
+        cursor.execute(
+            f"UPDATE category_Links SET status='processing' WHERE sub_id IN ({ids})"
+        )
+        con.commit()
+
     cursor.close()
     return rows
 
