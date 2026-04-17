@@ -231,7 +231,7 @@ def search_products(query):
     text=suggestion[0]['value'] if suggestion else ""
     if not text:
         print("No suggestions found for the query.")
-        return []
+        return {"Error": "No suggestions found for the query."}
     
     print("*"*50)    
     print(f"Searching suggestion for: {text}")
@@ -239,23 +239,11 @@ def search_products(query):
     response = session.get(f'https://www.ajio.com/search/?text={text}&responseSource={responseSource}', cookies=cookies, headers=headers)
     print(response)
 
-    with open("search_response1.html", "w", encoding="utf-8") as f:
-        f.write(response.text)
 
     tree=html.fromstring(response.text)
     json_data=parse_json_from_script(tree)
     
     cleaned_products = extract_listing_products(json_data)
 
-    OUTPUT_FILE.write_text(
-        json.dumps(cleaned_products, indent=4, ensure_ascii=False),
-        encoding="utf-8",
-    )
-
-    print(f"Saved {len(cleaned_products)} listing products to {OUTPUT_FILE}")
-
+    return {"First Suggestion": text, "products": cleaned_products}
     
-
-if __name__ == "__main__":
-    query = input("Enter search query: - ")
-    search_products(query)
